@@ -5,6 +5,7 @@ data "aws_ami" "base_ami" {
 }
 
 resource "aws_instance" "vpn" {
+  depends_on       = [aws_security_group.vpn]
   ami              = data.aws_ami.base_ami.id
   instance_type    = var.instance_type
   user_data_base64 = data.template_cloudinit_config.vpn.rendered
@@ -80,10 +81,18 @@ data "template_file" "vpn" {
   template = file("${path.module}/vpn.py")
 
   vars = {
-    hostname        = var.hostname,
-    slack_hook      = var.slack-hook,
-    swapsize        = 1,
-    authorized_keys = join("\n", var.ssh_authorized_keys)
+    hostname              = var.hostname,
+    slack_hook            = var.slack-hook,
+    swapsize              = 1,
+    authorized_keys       = join("\n", var.ssh_authorized_keys)
+    domain                = var.domain,
+    country               = var.cert_country,
+    province              = var.cert_province,
+    city                  = var.cert_city,
+    organisation          = var.cert_org
+    organisation_unit     = var.cert_organisational_unit
+    email                 = var.cert_email
+    certificates_to_issue = join(",", var.certificates_to_issue)
   }
 }
 
@@ -93,6 +102,31 @@ data "template_cloudinit_config" "vpn" {
 
   part {
     content = file("${path.module}/common.cloud-config")
+  }
+
+  part {
+    filename = "dockerd.py"
+    content  = file("${path.module}/dockerd.py")
+  }
+
+  part {
+    filename = "openvpn.py"
+    content  = file("${path.module}/openvpn.py")
+  }
+
+  part {
+    filename = "slack.py"
+    content  = file("${path.module}/slack.py")
+  }
+
+  part {
+    filename = "tfutil.py"
+    content  = file("${path.module}/tfutil.py")
+  }
+
+  part {
+    filename = "uptime.py"
+    content  = file("${path.module}/uptime.py")
   }
 
   part {

@@ -1,85 +1,46 @@
 #!/usr/bin/env python
-import boto3
-from botocore.exceptions import NoCredentialsError
-import os
-import subprocess
-import time
-import json
-import requests
-import pwd
-import grp
+import dockerd
+import uptime
+import tfutil
+import slack
+import openvpn
 
-def get_uptime():
-    with open('/proc/uptime', 'r') as f:
-        uptime_seconds = float(f.readline().split()[0])
-
-    return int(uptime_seconds)
+# Configure slack connection
+slack.set_webhook('${slack_hook}')
 
 # Send a message to slack to announce that we've come up.
-url = '${slack_hook}'
-if url:
-    headers = {'Content-type': 'application/json'}
-    payload = {'text': "VPN instance (${hostname}) is trying to come up."}
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
+slack.message("VPN instance (${hostname}) is trying to come up.")
 
 # Load system daemons
-subprocess.check_call(["systemctl", "daemon-reload"])
-subprocess.check_call(["systemctl", "enable", "docker.service"])
-subprocess.check_call(["systemctl", "start", "docker.service"])
+tfutil.init()
 
 # Add admin to docker group to call docker without sudo.
-subprocess.check_call(["usermod", "-a", "-G", "docker", "admin"])
-
-# Set values loaded by the template
-swapsize = int('${swapsize}')
+tfutil.add_docker_user("admin")
 
 # Set the host name
-subprocess.check_call(["hostnamectl", "set-hostname", '${hostname}'])
+tfutil.set_hostname('${hostname}')
 
 # Create Authorized Keys
-adminUID = pwd.getpwnam("admin").pw_uid
-adminGID = grp.getgrnam("admin").gr_gid
-adminSSHDir = "/home/admin/.ssh"
-fileAuthorizedKeys = adminSSHDir + "/authorized_keys"
-if not os.path.isdir(adminSSHDir):
-    os.mkdir(adminSSHDir)
-    os.chown(adminSSHDir, adminUID, adminGID)
-authorizedKeys = open(fileAuthorizedKeys,"w")
-authorizedKeys.write("""${authorized_keys}""")
-authorizedKeys.close()
-os.chmod(fileAuthorizedKeys, 0o600)
-os.chown(fileAuthorizedKeys, adminUID, adminGID)
+tfutil.create_authorized_keys("""${authorized_keys}""")
 
 # Create Swap
-if not os.path.isfile("/swapfile"):
-    f = open("/swapfile", "wb")
-    for i in xrange(swapsize * 1024):
-        f.write("\0" * 1024 * 1024)
-    f.close()
-    os.chmod("/swapfile", 0o600)
-    subprocess.check_output(["mkswap", "/swapfile"])
-    f = open("/etc/fstab", "a")
-    f.write("/swapfile none swap defaults 0 0\n")
-    f.close()
-    subprocess.check_output(["swapon", "-a"])
+tfutil.create_swap(int('${swapsize}'))
 
 # Set up Docker Daemon with a label
-daemonSettings = {
-    "labels": [
-        "node-purpose=vpn"
-    ]
-}
-daemon = open("/etc/docker/daemon.json", "w")
-daemon.write(json.dumps(daemonSettings, sort_keys=True, indent=4))
-daemon.close()
+dockerd.set_engine_label("vpn")
 
 # And restart docker
-subprocess.check_call(["systemctl", "restart", "docker.service"])
+dockerd.restart()
+dockerd.wait_for_dockerd_up()
 
 # Send a message to slack to announce that we've come up.
-url = '${slack_hook}'
-if url:
-    headers = {'Content-type': 'application/json'}
-    payload = {'text': "VPN instance (${hostname}) has come up in " + str(get_uptime()) + " seconds."}
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
+slack.message("VPN instance (${hostname}) has come up in " + str(uptime.uptime()) + " seconds.")
 
+# Create openvpn instance
+openvpn.create_openvpn_instance(domain='${domain}', country='${country}', province='${province}', city='${city}', organisation='${organisation}', organisation_unit='${organisation_unit}', email='${email}')
+
+# Create our certs
+openvpn.create_openvpn_files('${certificates_to_issue}'.split(","))
+
+# Send a message to slack to announce that we've come up.
+slack.message("VPN instance (${hostname}) has finished building openvpn files in " + str(uptime.uptime()) + " seconds.")

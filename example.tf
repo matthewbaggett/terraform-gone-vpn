@@ -12,10 +12,11 @@ module "vpn" {
     aws = aws.my-aws-instance
   }
 
-  vpc_id              = "your-vpc-id"
-  instance_type       = "t3a.nano"
-  ssh_authorized_keys = [file("~/.ssh/id_rsa.pub")]
-  #slack-hook         = "https://hooks.slack.com/services/THIS_IS_A_SECRET"
+  vpc_id                = "your-vpc-id"
+  instance_type         = "t3a.nano"
+  ssh_authorized_keys   = [file("~/.ssh/id_rsa.pub")]
+  certificates_to_issue = ["tom", "dick", "harry"]
+  #slack-hook           = "https://hooks.slack.com/services/THIS_IS_A_SECRET"
 }
 
 output "vpn_ip" {

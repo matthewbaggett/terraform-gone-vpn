@@ -43,3 +43,42 @@ variable "tag_name" {
   description = "Default NAME tag resource in AWS"
   default     = "VPN"
 }
+
+variable "domain" {
+  type    = string
+  default = "vpn.in-a-can.local"
+}
+
+variable "cert_country" {
+  type    = string
+  default = "UK"
+}
+
+variable "cert_province" {
+  type    = string
+  default = "Oxfordshire"
+}
+
+variable "cert_city" {
+  type    = string
+  default = "Oxford"
+}
+
+variable "cert_org" {
+  type    = string
+  default = "Department of Defiance"
+}
+
+variable "cert_organisational_unit" {
+  type    = string
+  default = "Department of Defiance"
+}
+
+variable "cert_email" {
+  type    = string
+  default = "matthew@baggett.me"
+}
+
+variable "certificates_to_issue" {
+  type = list(string)
+}

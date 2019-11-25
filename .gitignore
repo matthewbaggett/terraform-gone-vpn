@@ -1,5 +1,6 @@
 .idea
 plan
+**/*.ovpn
 
 # Local .terraform directories
 **/.terraform/*
@@ -19,9 +20,9 @@ crash.log
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
-_override.tf
+override.tf
 override.tf.json
-*_override.tf
+override.tf
 *_override.tf.json
 
 # Include override files you do wish to add to version control using negated pattern
