@@ -49,6 +49,10 @@ resource "aws_security_group" "vpn" {
   name   = "vpn"
   vpc_id = var.vpc_id
 
+  tags = {
+    "Name" = aws_security_group.vpn.name
+  }
+
   ingress {
     from_port   = 22
     to_port     = 22
