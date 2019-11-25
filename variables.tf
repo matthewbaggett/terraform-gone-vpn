@@ -32,11 +32,13 @@ variable "ssh_authorized_keys" {
 variable "cidr_block" {
   type    = string
   default = "10.10.0.0/16"
+  description = "Base IP address block you'd like your VPN to use for its AWS Security Group"
 }
 
 variable "cidr_block_offset" {
   type    = number
   default = 255
+  description = "What you'd like the 3rd octet of the IP CIDR block to be"
 }
 
 variable "tag_name" {
@@ -47,38 +49,47 @@ variable "tag_name" {
 variable "domain" {
   type    = string
   default = "vpn.in-a-can.local"
+  description = "Domain to use for VPN"
 }
 
 variable "cert_country" {
   type    = string
   default = "UK"
+  description = "SSL Certificate Country"
 }
 
 variable "cert_province" {
   type    = string
   default = "Oxfordshire"
+
+  description = "SSL Certificate Province"
 }
 
 variable "cert_city" {
   type    = string
   default = "Oxford"
+  description = "SSL Certificate City"
 }
 
 variable "cert_org" {
   type    = string
   default = "Department of Defiance"
+  description = "SSL Certificate Org"
 }
 
 variable "cert_organisational_unit" {
   type    = string
   default = "Department of Defiance"
+  description = "SSL Certificate OU"
 }
 
 variable "cert_email" {
   type    = string
   default = "matthew@baggett.me"
+  description = "SSL Certificate Email Address"
 }
 
 variable "certificates_to_issue" {
   type = list(string)
+  description = "VPN configuration files to generate users for (this is a list of names to generate matching name.ovpn files for)"
 }

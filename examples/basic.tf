@@ -6,7 +6,7 @@ provider "aws" {
 }
 
 module "vpn" {
-  source = "./vpn-in-a-can"
+  source = "..\/vpn-in-a-can"
 
   providers = {
     aws = aws.my-aws-instance

@@ -73,10 +73,6 @@ resource "aws_security_group" "vpn" {
   }
 }
 
-output "vpn_ip" {
-  value = aws_eip.vpn.public_ip
-}
-
 data "template_file" "vpn" {
   template = file("${path.module}/vpn.py")
 
