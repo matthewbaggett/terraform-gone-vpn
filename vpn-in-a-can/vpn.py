@@ -82,6 +82,6 @@ subprocess.check_call(["systemctl", "restart", "docker.service"])
 url = '${slack_hook}'
 if url:
     headers = {'Content-type': 'application/json'}
-    payload = {'text': "VPN instance (${hostname}) has come up in " + str(get_uptime()) + "."}
+    payload = {'text': "VPN instance (${hostname}) has come up in " + str(get_uptime()) + " seconds."}
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
