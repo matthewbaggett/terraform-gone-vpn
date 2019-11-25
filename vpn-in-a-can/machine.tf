@@ -1,0 +1,103 @@
+data "aws_ami" "base_ami" {
+  most_recent = true
+  name_regex  = var.base_ami_regexp
+  owners      = ["amazon", "self"]
+}
+
+resource "aws_instance" "vpn" {
+  ami              = data.aws_ami.base_ami.id
+  instance_type    = var.instance_type
+  user_data_base64 = data.template_cloudinit_config.vpn.rendered
+  monitoring       = false
+  subnet_id        = aws_subnet.vpn.id
+  security_groups  = [aws_security_group.vpn.id]
+
+  tags = {
+    Name = var.tag_name
+  }
+
+  root_block_device {
+    volume_size = 8
+  }
+
+  credit_specification {
+    cpu_credits = "standard"
+  }
+}
+
+resource "aws_subnet" "vpn" {
+  vpc_id                  = var.vpc_id
+  cidr_block              = cidrsubnet(var.cidr_block, 8, var.cidr_block_offset, )
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = var.tag_name
+  }
+}
+
+resource "aws_eip" "vpn" {
+  depends_on = [aws_instance.vpn]
+  instance   = aws_instance.vpn.id
+  vpc        = true
+  tags = {
+    Name = var.tag_name
+  }
+}
+
+resource "aws_security_group" "vpn" {
+  name   = "vpn"
+  vpc_id = var.vpc_id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+
+  ingress {
+    from_port   = 1194
+    to_port     = 1194
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+output "vpn_ip" {
+  value = aws_eip.vpn.public_ip
+}
+
+data "template_file" "vpn" {
+  template = file("${path.module}/vpn.py")
+
+  vars = {
+    hostname        = var.hostname,
+    slack_hook      = var.slack-hook,
+    swapsize        = 1,
+    authorized_keys = join("\n", var.ssh_authorized_keys)
+  }
+}
+
+data "template_cloudinit_config" "vpn" {
+  gzip          = "true"
+  base64_encode = "true"
+
+  part {
+    content = file("${path.module}/common.cloud-config")
+  }
+
+  part {
+    filename     = "vpn.py"
+    content      = data.template_file.vpn.rendered
+    content_type = "text/x-shellscript"
+  }
+}
