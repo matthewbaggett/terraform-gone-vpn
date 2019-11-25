@@ -6,7 +6,8 @@ provider "aws" {
 }
 
 module "vpn" {
-  source = "..\/vpn-in-a-can"
+  source  = "matthewbaggett/vpn/gone"
+  version = ">=0.1.0"
 
   providers = {
     aws = aws.my-aws-instance
