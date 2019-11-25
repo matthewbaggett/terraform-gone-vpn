@@ -60,3 +60,5 @@ groups:
 users:
   - name: admin
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh-authorized-keys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDmETGaY8S7I6I+6Rm0rVtWwlpmOQ+ZnywQpAKyj5gnK2a/9bwSJzMt/DI+/WBodSHLfXef8P0CHfPpMKqTAN1c4kDNqNgsvAMC6lSXofqnSu4mEhEWRSsJwA8NXanQ9ph970aaQKdj+GlS9lsoMel/cOdjyPrP3RtFTd0BuAlCah5KB8Job699riVnvh6y+SyqwWtNRAesAfQqrBzLs3LTWtltqG4UZ0mkuLpVu7RbJOh1hAPqhd1NKHMjPpBXUjABMVya0qFFbq2j9W016P0dMkZO/jZqLdd6MeF25q9lNeJXU6/w5d3qSljpq9u+AbhIoUgTZerLcN2hqVWZlpDn geusebio@roosevelt

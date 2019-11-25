@@ -2,10 +2,10 @@ provider "aws" {
   alias   = "my-aws-instance"
   version = "~> 2.30"
   profile = "default"
-  region  = "us-east-1"
+  region  = "eu-west-3"
 }
 
-module "vpn-in-a-can" {
+module "vpn" {
   source = "./vpn-in-a-can"
 
   providers = {
@@ -15,9 +15,10 @@ module "vpn-in-a-can" {
   vpc_id              = "your-vpc-id"
   instance_type       = "t3a.nano"
   ssh_authorized_keys = [file("~/.ssh/id_rsa.pub")]
+  #slack-hook         = "https://hooks.slack.com/services/THIS_IS_A_SECRET"
 }
 
 output "vpn_ip" {
-  value = module.vpn-in-a-can.vpn_ip
+  value = module.vpn.vpn_ip
 }
 

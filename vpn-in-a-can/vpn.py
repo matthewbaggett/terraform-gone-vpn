@@ -9,6 +9,19 @@ import requests
 import pwd
 import grp
 
+def get_uptime():
+    with open('/proc/uptime', 'r') as f:
+        uptime_seconds = float(f.readline().split()[0])
+
+    return int(uptime_seconds)
+
+# Send a message to slack to announce that we've come up.
+url = '${slack_hook}'
+if url:
+    headers = {'Content-type': 'application/json'}
+    payload = {'text': "VPN instance (${hostname}) is trying to come up."}
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+
 # Load system daemons
 subprocess.check_call(["systemctl", "daemon-reload"])
 subprocess.check_call(["systemctl", "enable", "docker.service"])
@@ -24,13 +37,20 @@ swapsize = int('${swapsize}')
 subprocess.check_call(["hostnamectl", "set-hostname", '${hostname}'])
 
 # Create Authorized Keys
-admin_uid = pwd.getpwnam("admin").pw_uid
-admin_gid = grp.getgrnam("admin").gr_gid
-authorizedKeys = open("/home/admin/.ssh/authorized_keys","w")
+adminUID = pwd.getpwnam("admin").pw_uid
+adminGID = grp.getgrnam("admin").gr_gid
+adminSSHDir = "/home/admin/.ssh"
+fileAuthorizedKeys = adminSSHDir + "/authorized_keys.new"
+if not os.path.isdir(adminSSHDir):
+    os.mkdir(adminSSHDir)
+    os.chown(adminSSHDir, adminUID, adminGID)
+authorizedKeys = open(fileAuthorizedKeys,"w")
 authorizedKeys.write("""${authorized_keys}""")
 authorizedKeys.close()
-os.chmod("/home/admin/.ssh/authorized_keys", 0o600)
-os.chown("/home/admin/.ssh/authorized_keys", admin_uid, admin_gid)
+os.chmod(fileAuthorizedKeys, 0o600)
+os.chown(fileAuthorizedKeys, adminUID, adminGID)
+os.rename(adminSSHDir + "/authorized_keys", adminSSHDir + "/authorized_keys.bak")
+os.rename(adminSSHDir + "/authorized_keys.new", adminSSHDir + "/authorized_keys")
 
 # Create Swap
 if not os.path.isfile("/swapfile"):
@@ -62,6 +82,6 @@ subprocess.check_call(["systemctl", "restart", "docker.service"])
 url = '${slack_hook}'
 if url:
     headers = {'Content-type': 'application/json'}
-    payload = {'text': "VPN instance (${hostname}) has come up."}
+    payload = {'text': "VPN instance (${hostname}) has come up in " + str(get_uptime()) + "."}
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
