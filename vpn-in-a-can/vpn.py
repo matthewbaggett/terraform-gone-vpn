@@ -40,7 +40,7 @@ subprocess.check_call(["hostnamectl", "set-hostname", '${hostname}'])
 adminUID = pwd.getpwnam("admin").pw_uid
 adminGID = grp.getgrnam("admin").gr_gid
 adminSSHDir = "/home/admin/.ssh"
-fileAuthorizedKeys = adminSSHDir + "/authorized_keys.new"
+fileAuthorizedKeys = adminSSHDir + "/authorized_keys"
 if not os.path.isdir(adminSSHDir):
     os.mkdir(adminSSHDir)
     os.chown(adminSSHDir, adminUID, adminGID)
@@ -49,8 +49,6 @@ authorizedKeys.write("""${authorized_keys}""")
 authorizedKeys.close()
 os.chmod(fileAuthorizedKeys, 0o600)
 os.chown(fileAuthorizedKeys, adminUID, adminGID)
-os.rename(adminSSHDir + "/authorized_keys", adminSSHDir + "/authorized_keys.bak")
-os.rename(adminSSHDir + "/authorized_keys.new", adminSSHDir + "/authorized_keys")
 
 # Create Swap
 if not os.path.isfile("/swapfile"):
