@@ -5,13 +5,13 @@ data "aws_ami" "base_ami" {
 }
 
 resource "aws_instance" "vpn" {
-  depends_on       = [aws_security_group.vpn]
-  ami              = data.aws_ami.base_ami.id
-  instance_type    = var.instance_type
-  user_data_base64 = data.template_cloudinit_config.vpn.rendered
-  monitoring       = false
-  subnet_id        = aws_subnet.vpn.id
-  security_groups  = [aws_security_group.vpn.id]
+  depends_on             = [aws_security_group.vpn]
+  ami                    = data.aws_ami.base_ami.id
+  instance_type          = var.instance_type
+  user_data_base64       = data.template_cloudinit_config.vpn.rendered
+  monitoring             = false
+  subnet_id              = aws_subnet.vpn.id
+  vpc_security_group_ids = [aws_security_group.vpn.id]
 
   tags = {
     Name = var.tag_name
