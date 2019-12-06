@@ -46,6 +46,12 @@ variable "tag_name" {
   default     = "VPN"
 }
 
+variable "tags_extra" {
+  description = "Extra tags you can use with AWS for resource tracking"
+  default     = {}
+  type        = map(string)
+}
+
 variable "domain" {
   type        = string
   default     = "vpn.in-a-can.local"

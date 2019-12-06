@@ -13,9 +13,7 @@ resource "aws_instance" "vpn" {
   subnet_id              = aws_subnet.vpn.id
   vpc_security_group_ids = [aws_security_group.vpn.id]
 
-  tags = {
-    Name = var.tag_name
-  }
+  tags = merge(map("Name", var.tag_name), var.tags_extra)
 
   root_block_device {
     volume_size = 8
@@ -31,27 +29,21 @@ resource "aws_subnet" "vpn" {
   cidr_block              = cidrsubnet(var.cidr_block, 8, var.cidr_block_offset, )
   map_public_ip_on_launch = true
 
-  tags = {
-    Name = var.tag_name
-  }
+  tags = merge(map("Name", var.tag_name), var.tags_extra)
 }
 
 resource "aws_eip" "vpn" {
   depends_on = [aws_instance.vpn]
   instance   = aws_instance.vpn.id
   vpc        = true
-  tags = {
-    Name = var.tag_name
-  }
+  tags       = merge(map("Name", var.tag_name), var.tags_extra)
 }
 
 resource "aws_security_group" "vpn" {
   name   = "vpn"
   vpc_id = var.vpc_id
 
-  tags = {
-    "Name" = "VPN"
-  }
+  tags = merge(map("Name", var.tag_name), var.tags_extra)
 
   ingress {
     from_port   = 22
