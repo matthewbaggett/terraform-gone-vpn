@@ -15,6 +15,10 @@ resource "aws_instance" "vpn" {
 
   tags = merge(map("Name", var.tag_name), var.tags_extra)
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   root_block_device {
     volume_size = 8
   }
@@ -37,6 +41,48 @@ resource "aws_eip" "vpn" {
   instance   = aws_instance.vpn.id
   vpc        = true
   tags       = merge(map("Name", var.tag_name), var.tags_extra)
+}
+
+resource "aws_s3_bucket" "vpn_bucket" {
+  bucket = var.s3_bucket_name
+  acl    = "private"
+  tags   = merge(map("Name", var.tag_name), var.tags_extra)
+}
+
+resource "aws_s3_bucket_public_access_block" "vpn_bucket" {
+  bucket = aws_s3_bucket.vpn_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_iam_user" "vpn_bucket" {
+  name = var.s3_bucket_user
+}
+
+resource "aws_iam_access_key" "vpn_bucket" {
+  user = aws_iam_user.vpn_bucket.name
+}
+
+resource "aws_iam_user_policy_attachment" "attach-s3-vpn_bucket" {
+  user = aws_iam_user.vpn_bucket.name
+  # @todo Revise this policy, it doesn't really need full access to S3.
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+output "vpn_bucket_user" {
+  value = aws_iam_user.vpn_bucket.name
+}
+output "vpn_bucket_key" {
+  value = aws_iam_access_key.vpn_bucket.id
+}
+output "vpn_bucket_secret" {
+  value = aws_iam_access_key.vpn_bucket.secret
+}
+output "vpn_bucket" {
+  value = aws_s3_bucket.vpn_bucket.id
 }
 
 resource "aws_security_group" "vpn" {
@@ -85,8 +131,14 @@ data "template_file" "vpn" {
     organisation_unit     = var.cert_organisational_unit
     email                 = var.cert_email
     certificates_to_issue = join(",", var.certificates_to_issue)
+    s3_region             = data.aws_region.current.name
+    s3_key                = aws_iam_access_key.vpn_bucket.id
+    s3_secret             = aws_iam_access_key.vpn_bucket.secret
+    s3_bucket             = aws_s3_bucket.vpn_bucket.id
   }
 }
+
+data "aws_region" "current" {}
 
 data "template_cloudinit_config" "vpn" {
   gzip          = "true"

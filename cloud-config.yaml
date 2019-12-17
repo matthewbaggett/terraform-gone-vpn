@@ -1,13 +1,11 @@
 #cloud-config
 bootcmd:
-  - [ "cloud-init-per", "once", "amazon-linux-extras-docker", "amazon-linux-extras", "install", "docker" ]
-  - [ "cloud-init-per", "once", "amazon-linux-extras-epel", "amazon-linux-extras", "install", "epel" ]
-  - [ sh, -c, "pip install docker boto3 requests" ]
+  - [ "cloud-init-per", "once", "amazon-linux-extras-docker",   "amazon-linux-extras", "install", "docker"      ]
+  - [ "cloud-init-per", "once", "amazon-linux-extras-epel",     "amazon-linux-extras", "install", "epel"        ]
+  - [ "cloud-init-per", "once", "install-pip",                  "yum", "-y", "install", "python2-pip"           ]
+  - [ "cloud-init-per", "once", "install-pip-packages",         "pip", "install", "docker", "boto3", "requests" ]
 #repo_update: true
 #repo_upgrade: all
-packages:
-  - docker
-  - python2-pip
 final_message: "The system is finally up, after $UPTIME seconds"
 output:
   all: "| tee -a /var/log/cloud-init-output.log"

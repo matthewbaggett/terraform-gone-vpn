@@ -99,3 +99,9 @@ variable "certificates_to_issue" {
   type        = list(string)
   description = "VPN configuration files to generate users for (this is a list of names to generate matching name.ovpn files for)"
 }
+
+variable "s3_bucket_name" {}
+
+variable "s3_bucket_user" {
+  default = "vpn-s3-user"
+}

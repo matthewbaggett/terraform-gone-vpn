@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import docker
-import tarfile, io
+import docker, tarfile, io, subprocess
+
 
 client = docker.from_env()
 
@@ -10,7 +10,7 @@ volumes = ["/tmp/purp:/etc/openvpn"]
 
 always_delete_everything = False
 
-def create_openvpn_instance(domain, country, province, city, organisation, organisation_unit, email):
+def create_openvpn_instance(domain, country, province, city, organisation, organisation_unit, email, s3_key, s3_secret, s3_region):
     environment = [
         "EASYRSA_BATCH=yes",
         "EASYRSA_REQ_CN=" + domain,
@@ -21,6 +21,10 @@ def create_openvpn_instance(domain, country, province, city, organisation, organ
         "EASYRSA_REQ_OU=" + organisation_unit,
         "EASYRSA_REQ_EMAIL=" + email,
     ]
+
+    # Set up AWS
+    subprocess.check_call(["aws", "configure", "set", "aws_access_key_id", s3_key])
+    subprocess.check_call(["aws", "configure", "set", "aws_secret_access_key", s3_secret])
 
     # Remove this forceful baleetion
     if always_delete_everything:
@@ -71,12 +75,13 @@ def create_openvpn_instance(domain, country, province, city, organisation, organ
             cap_add=["NET_ADMIN"],
             ports={'1194/udp':'1194'},
             restart_policy={"Name": "on-failure", "MaximumRetryCount": 0},
-            volumes=volumes
+            volumes=volumes,
+            nano_cpus=1000000000
         )
     else:
         print "Instance already started"
 
-def create_openvpn_files(ovpn_files_to_generate = []):
+def create_openvpn_files(ovpn_files_to_generate, s3_bucket):
     instance = client.containers.get(name)
 
     # Generate user openvpn files
@@ -87,6 +92,7 @@ def create_openvpn_files(ovpn_files_to_generate = []):
 
         bits, stat = instance.get_archive("/etc/openvpn/" + to_generate + ".ovpn")
 
+        # Extract the key from the tarball we get from docker
         mp = io.BytesIO()
         for chunk in bits:
             mp.write(chunk)
@@ -95,11 +101,18 @@ def create_openvpn_files(ovpn_files_to_generate = []):
         member = tar.getmembers()[0]
         content = tar.extractfile(member)
 
+        # Write the extracted file into the local filesystem.
         ovpn_file = open(to_generate + ".ovpn", "w")
         ovpn_file.write(content.read())
         ovpn_file.close()
-
         tar.close()
         mp.close()
+        print(" > File created: " + to_generate + ".ovpn")
 
+        # Upload the keys to S3
+        subprocess.check_call(["aws", "s3", "cp", to_generate + ".ovpn", "s3://" + s3_bucket + "/" + to_generate + ".ovpn"])
+        print(" > Uploaded " + to_generate + ".ovpn to s3")
+
+        # Delete evidence of the keys.
         instance.exec_run("rm /etc/openvpn/" + to_generate + ".ovpn")
+        subprocess.check_call(["rm", to_generate + ".ovpn"])

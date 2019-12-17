@@ -30,17 +30,32 @@ tfutil.create_swap(int('${swapsize}'))
 dockerd.set_engine_label("vpn")
 
 # And restart docker
-dockerd.restart()
 dockerd.wait_for_dockerd_up()
 
 # Send a message to slack to announce that we've come up.
 slack.message("VPN instance (${hostname}) has come up in " + str(uptime.uptime()) + " seconds.")
 
 # Create openvpn instance
-openvpn.create_openvpn_instance(domain='${domain}', country='${country}', province='${province}', city='${city}', organisation='${organisation}', organisation_unit='${organisation_unit}', email='${email}')
+print("Creating openvpn instance\n")
+openvpn.create_openvpn_instance(
+    domain='${domain}',
+    country='${country}',
+    province='${province}',
+    city='${city}',
+    organisation='${organisation}',
+    organisation_unit='${organisation_unit}',
+    email='${email}',
+    s3_key='${s3_key}',
+    s3_secret='${s3_secret}',
+    s3_region='${s3_region}'
+)
 
 # Create our certs
-openvpn.create_openvpn_files('${certificates_to_issue}'.split(","))
+print("Creating openvpn certs\n")
+openvpn.create_openvpn_files(
+    '${certificates_to_issue}'.split(","),
+    s3_bucket='${s3_bucket}'
+)
 
 # Send a message to slack to announce that we've come up.
 slack.message("VPN instance (${hostname}) has finished building openvpn files in " + str(uptime.uptime()) + " seconds.")
