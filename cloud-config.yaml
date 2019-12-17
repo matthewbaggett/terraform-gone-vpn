@@ -2,59 +2,36 @@
 bootcmd:
   - [ "cloud-init-per", "once", "amazon-linux-extras-docker", "amazon-linux-extras", "install", "docker" ]
   - [ "cloud-init-per", "once", "amazon-linux-extras-epel", "amazon-linux-extras", "install", "epel" ]
-repo_update: true
-repo_upgrade: all
+  - [ sh, -c, "pip install docker boto3 requests" ]
+#repo_update: true
+#repo_upgrade: all
 packages:
   - docker
   - python2-pip
-runcmd:
-  - [ sh, -c, "pip install docker boto3 requests" ]
 final_message: "The system is finally up, after $UPTIME seconds"
 output:
   all: "| tee -a /var/log/cloud-init-output.log"
 write_files:
-  - content: |
+  - path: /etc/cron.hourly/docker-prune.sh
+    content: |
       #!/bin/sh
       docker image prune -f > /dev/null
       docker container prune -f > /dev/null
-      docker node rm $(docker node ls --format "{{.ID}} {{.Status}} {{.Availability}}" | grep " Down" |  awk '{ print $1 }')
-    path: /etc/cron.hourly/docker-prune.sh
     owner: root:root
     permissions: "0700"
-  - content: |
+  - path: /etc/cron.daily/docker-prune.sh
+    content: |
       #!/bin/sh
       docker image prune --all -f > /dev/null
       docker network prune -f > /dev/null
       docker volume prune -f > /dev/null
-    path: /etc/cron.daily/docker-prune.sh
     owner: root:root
     permissions: "0700"
-  - content: |
+  - path: /etc/cron.daily/system-update.sh
+    content: |
       #!/bin/sh
-      docker node update --availability drain $(docker info -f '{{.Swarm.NodeID}}')
-      sleep 10
-      docker node demote $(docker info -f '{{.Swarm.NodeID}}')
-      sleep 10
-      docker swarm leave
-    path: /root/bin/leave-swarm.sh
-    owner: root:root
-    permissions: "0700"
-  - content: |
-      #!/bin/sh
-      #docker node rm $(docker node ls --format "{{.ID}} {{.Status}} {{.Availability}}" | grep " Down Drain" |  awk '{ print $1 }')
-      docker node rm $(docker node ls --format "{{.ID}} {{.Status}} {{.Availability}}" | grep "Down" |  awk '{ print $1 }')
-    path: /root/bin/prune-nodes.sh
-    owner: root:root
-    permissions: "0700"
-  - content: |
-      #!/bin/sh
-      for node_name in $*
-      do
-        docker node update --availability drain ${node_name}
-      done
-      sleep 10
-      docker node rm --force $*
-    path: /root/bin/rm-workers.sh
+      yum update --assumeyes
+      rm -rf /var/cache/yum
     owner: root:root
     permissions: "0700"
 groups:

@@ -25,8 +25,8 @@ variable "slack-hook" {
 
 variable "ssh_authorized_keys" {
   description = "Default keys to put in authorized_keys"
-  default     = []
-  type        = list(string)
+  default     = ""
+  type        = string
 }
 
 variable "cidr_block" {

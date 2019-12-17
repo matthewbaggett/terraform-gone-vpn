@@ -4,9 +4,6 @@ import subprocess
 import time
 import json
 import sys
-import docker
-
-client = docker.from_env()
 
 def restart():
     subprocess.check_call(["systemctl", "restart", "docker.service"])

@@ -76,7 +76,7 @@ data "template_file" "vpn" {
     hostname              = var.hostname,
     slack_hook            = var.slack-hook,
     swapsize              = 1,
-    authorized_keys       = join("\n", var.ssh_authorized_keys)
+    authorized_keys       = var.ssh_authorized_keys
     domain                = var.domain,
     country               = var.cert_country,
     province              = var.cert_province,
@@ -93,7 +93,7 @@ data "template_cloudinit_config" "vpn" {
   base64_encode = "true"
 
   part {
-    content = file("${path.module}/common.cloud-config")
+    content = file("${path.module}/cloud-config.yaml")
   }
 
   part {
