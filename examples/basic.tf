@@ -1,6 +1,6 @@
 provider "aws" {
   alias   = "my-aws-instance"
-  version = "~> 2.30"
+  version = "~> 2.53"
   profile = "default"
   region  = "eu-west-3"
 }
